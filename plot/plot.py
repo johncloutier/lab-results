@@ -33,7 +33,7 @@ class ScrollableWindow(QtWidgets.QMainWindow):
         self.nav = NavigationToolbar(self.canvas, self.widget)
         self.widget.layout().addWidget(self.nav)
         self.widget.layout().addWidget(self.scroll)
-
+        self.resize(1600, 900)
         self.show()
         exit(self.qapp.exec_()) 
 
@@ -67,9 +67,10 @@ def plotLabSet(labset):
 def plotResults(results): 
     count = len(results.data)
     rows = int(count / 3) if count % 3 == 0 else int(count // 3 + 1)
+    cols = 3
     chartno = 0
-    fig, ax = plt.subplots(nrows=rows, ncols=3, figsize=(12, 120))
-    fig.suptitle('Laboratory Results')
+    fig, ax = plt.subplots(nrows=rows, ncols=cols, figsize=(12, 120))
+    fig.suptitle('Laboratory Results', y=0.999)
             
     for labset in results.data:
         dates = []
@@ -95,5 +96,13 @@ def plotResults(results):
         ax[rowpos, colpos].set_ylabel(labset.results[0].ref, fontsize=6)
         ax[rowpos, colpos].set_title(labset.name, fontsize=8, y=1.0, pad=-12)
         chartno += 1
-        
+    
+    # Hide unused subplots
+    while chartno < rows * cols:
+        rowpos = chartno // 3
+        colpos = chartno % 3
+        ax[rowpos, colpos].remove()
+        chartno += 1
+    
+    fig.tight_layout()
     ScrollableWindow(fig)

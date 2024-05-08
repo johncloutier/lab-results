@@ -23,7 +23,7 @@ def printCategories(filename):
         for t in title:
             print("section:",t.firstChild.nodeValue)
 
-def printComponent(component):
+def getComponent(component):
     '''
     Look for tests that are inclosed in a "component" tag
     '''
@@ -101,7 +101,7 @@ def printComponent(component):
     global records
     records += 1
 
-def printComponents(root):
+def getComponents(root):
     '''
     Sift through document to find all "component" tags that follow a "section" 
     with "Results" in its name
@@ -119,11 +119,11 @@ def printComponents(root):
         
         # Some results have a whole "component" node others are jammed into
         # HTML tables within component nodes
-        printComponent(component) 
-        printGenTables(component)
-        printTOLTables(component)
+        getComponent(component) 
+        getGenTables(component)
+        getTOLTables(component)
 
-def printTOLTable(table):
+def getTOLTable(table):
     '''
     Extract results from HTML tables within the XML; TOL flavor
     '''
@@ -166,12 +166,12 @@ def printTOLTable(table):
     records += 1
 
 # Find all HTML tables; TOL flavor
-def printTOLTables(root):
+def getTOLTables(root):
     tables = root.findall(".//{*}table")
     for table in tables:
-        printTOLTable(table) 
+        getTOLTable(table) 
 
-def printGenTable(table):
+def getGenTable(table):
     '''
     Extract results from HTML table within the XML; Genesis flavor
     '''
@@ -210,10 +210,10 @@ def printGenTable(table):
                     records += 1
 
 # Find all HTML tables; Genesis flavor
-def printGenTables(root):
+def getGenTables(root):
     tables = root.findall(".//{*}tbody")
     for table in tables:
-        printGenTable(table) 
+        getGenTable(table) 
 
 # Print results from Result structure
 def printResults(results):
@@ -242,14 +242,16 @@ records = 0
 # Print TOL Records
 #printCategories('TOL_records.xml')
 root = et(file='tol_records.xml').getroot()
-printComponents(root)
+getComponents(root)
 
 
 # Print Genesis Records
 #printCategories('genesis_records.xml')
 root = et(file='genesis_records.xml').getroot()
-printComponents(root)
+getComponents(root)
 
+res.Results.scrubOutliers(res, results)
+#res.Results.printDataFrame(res, results)
 #printResults(results)
 #plot.plotLabSet(results.data[0])
 plot.plotResults(results)

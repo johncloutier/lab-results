@@ -7,7 +7,9 @@ Created on May 1, 2024
 
 import dateutil.parser as parser
 import re
-from decimal import Decimal
+import pandas as pd
+import numpy as np
+from scipy import stats
 
 class Results(object):
     '''
@@ -24,13 +26,15 @@ class Results(object):
         
         # Look for negative results
         if "neg" in lab.value.lower() or "non" in lab.value.lower() \
-        or "not" in lab.value.lower() or "tnp" in lab.value.lower() :
+        or "not" in lab.value.lower() or "tnp" in lab.value.lower() \
+        or "no growth" in lab.value.lower():
             lab.numvalue = "-1"
             return
         
         # Look for positive results
         if "pos" in lab.value.lower() or "present" in lab.value.lower() \
-        or "normal" in lab.value.lower() or "adequate" in lab.value.lower():
+        or "normal" == lab.value.lower() or "adequate" in lab.value.lower()\
+        or "critical high" in lab.value.lower():
             lab.numvalue = "1"
             return
         
@@ -44,29 +48,56 @@ class Results(object):
             lab.numvalue = "0"
             return
         
-        # Calc percentage
-        if "%" in lab.value:
-            percent = re.sub('[^0-9.]','', lab.value)
-            lab.numvalue = str(round(float(percent) / 100, 8))
-            return
+        # Scrub percentage
         if "/100" in lab.value:
-            percent = re.sub('(\\s+)?/100(.+)?','', lab.value)
-            lab.numvalue = str(round(float(percent) / 100, 8))
+            lab.numvalue = re.sub('(\\s+)?/100(.+)?','', lab.value)
             return 
         
-        # Convert sci notation
-        split = re.split("[A-Za-z\\s]+?x10\\((\\d+)\\)", lab.value)
+        # Look for sci notation
+        split = re.split("[A-Za-z\\s]*x10\\((\d)\\)", lab.value)
         if  len(split) == 3:
-            lab.numvalue = str(round(float(split[0]) * 10 ** float(split[1]), 8))
+            lab.numvalue = split[0]
             return
-        split = re.split("x10\\((\\d+)\\)", lab.value)
+        split = re.split("[^0-9.]10\\^(\\d+)", lab.value)
         if  len(split) == 3:
-            lab.numvalue = str(round(float(split[0]) * 10 ** float(split[1]), 8))
+            lab.numvalue = split[0]
             return
         
         # Scrub units
         lab.numvalue = re.sub('[^0-9.]','', lab.value)
-        
+    
+    def printDataFrame(self, results):    
+        records = 0
+        for labset in results.data:
+            dates = []
+            numvalues = []
+            values = []
+            for lab in labset.results:   
+                dates.append(lab.time)
+                numvalues.append(lab.numvalue)
+                values.append(lab.value)
+                records += 1
+            df = pd.DataFrame({'Dates': dates, labset.name: numvalues, "origvalues": values})
+            df['Dates'] = pd.to_datetime(df['Dates'])
+            df = df.sort_values('Dates', ascending=True)
+            print(df)
+        print("total records in df: " + str(records))    
+            
+    def scrubOutliers(self, results):
+        for labset in results.data:
+            numeric = False
+            for lab in labset.results:
+                if lab.numvalue not in ['-1', '0', '-1']:
+                    numeric = True
+            
+            badlabs = []
+            if numeric:
+                for lab in labset.results:
+                    if lab.numvalue in ['-1', '0', '-1']:
+                        badlabs.append(lab)
+                for badlab in badlabs:
+                    labset.results.remove(badlab)
+       
     # Add a particular result to the Results collection
     def addRecord(self, lab):
         #Clean up timestamps and numerical values
