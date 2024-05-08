@@ -7,7 +7,7 @@ Created on May 5, 2024
 import matplotlib.pyplot as plt
 import matplotlib.dates as dts
 import pandas as pd
-
+import re
 
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -95,6 +95,18 @@ def plotResults(results):
         ax[rowpos, colpos].tick_params(axis='y', labelsize=6)
         ax[rowpos, colpos].set_ylabel(labset.results[0].ref, fontsize=6)
         ax[rowpos, colpos].set_title(labset.name, fontsize=8, y=1.0, pad=-12)
+        
+        try:
+            refrange = re.findall('[0-9\\.]+-[0-9\\.]+', labset.results[0].ref)[0]
+            rangemin = float(refrange.split("-")[0])
+            rangemax = float(refrange.split("-")[1])
+            ax[rowpos, colpos].axhspan(rangemin, rangemax, color='orange', alpha=0.5)
+        except:
+            pass
+        
+        for i in range(df[labset.name].size):
+            ax[rowpos, colpos].text(df['Dates'][i], df[labset.name][i], df[labset.name][i], fontsize=6)
+            
         chartno += 1
     
     # Hide unused subplots

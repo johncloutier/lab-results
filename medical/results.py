@@ -129,6 +129,9 @@ class Results(object):
             ls.name = lab.name
             ls.results.append(lab)
             self.data.append(ls)
+            
+            if ls.ref == "":
+                ls.ref = lab.ref
 
 
 
@@ -138,6 +141,7 @@ class LabSet(object):
     '''
     def __init__(self):
         self.name = ""
+        self.ref = ""
         self.results = []
         
 class Lab(object):
